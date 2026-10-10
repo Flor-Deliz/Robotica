@@ -14,3 +14,9 @@ desktop.ini
 .vscode/
 .idea/
 *.bak
+
+# Informes y documentos LaTeX
+*.tex
+*.pdf
+informe*/
+
