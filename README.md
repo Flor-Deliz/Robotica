@@ -106,7 +106,7 @@ git branch -M main
 
 # 7. Vincular con tu repositorio remoto creado en GitHub
 # (Crea un nuevo repositorio vacío en github.com y copia su URL)
-git remote add origin https://github.com/TU_USUARIO/circuitos-semaforos-arduino.git
+git remote add origin https://github.com/Flor-Deliz/Sistemas-embebidos-.git
 
 # 8. Subir el código a GitHub
 git push -u origin main
