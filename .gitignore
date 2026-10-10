@@ -1,0 +1,16 @@
+# Archivos compilados de Arduino
+*.hex
+*.bin
+*.elf
+*.o
+build/
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Entornos de desarrollo
+.vscode/
+.idea/
+*.bak

@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "author": "Antigravity",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-uno", "id": "uno", "top": 80, "left": 40, "attrs": {} },
+    { "type": "wokwi-resistor", "id": "r_car_g", "top": 50, "left": 360, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r_car_y", "top": 90, "left": 360, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r_car_r", "top": 130, "left": 360, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r_ped_g", "top": 180, "left": 360, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r_ped_r", "top": 220, "left": 360, "attrs": { "value": "220" } },
+    { "type": "wokwi-led", "id": "led_car_g", "top": 40, "left": 430, "attrs": { "color": "green", "label": "CAR_V" } },
+    { "type": "wokwi-led", "id": "led_car_y", "top": 80, "left": 430, "attrs": { "color": "yellow", "label": "CAR_A" } },
+    { "type": "wokwi-led", "id": "led_car_r", "top": 120, "left": 430, "attrs": { "color": "red", "label": "CAR_R" } },
+    { "type": "wokwi-led", "id": "led_ped_g", "top": 170, "left": 430, "attrs": { "color": "green", "label": "PEAT_V" } },
+    { "type": "wokwi-led", "id": "led_ped_r", "top": 210, "left": 430, "attrs": { "color": "red", "label": "PEAT_R" } },
+    { "type": "wokwi-pushbutton", "id": "btn_peaton", "top": 280, "left": 380, "attrs": { "color": "blue", "label": "BOTON_PEATON" } }
+  ],
+  "connections": [
+    [ "uno:2", "r_car_g:1", "green", [ "v0" ] ],
+    [ "r_car_g:2", "led_car_g:A", "green", [ "v0" ] ],
+    [ "led_car_g:C", "uno:GND.1", "black", [ "v15", "h-140" ] ],
+
+    [ "uno:3", "r_car_y:1", "orange", [ "v0" ] ],
+    [ "r_car_y:2", "led_car_y:A", "orange", [ "v0" ] ],
+    [ "led_car_y:C", "uno:GND.1", "black", [ "v15", "h-140" ] ],
+
+    [ "uno:4", "r_car_r:1", "red", [ "v0" ] ],
+    [ "r_car_r:2", "led_car_r:A", "red", [ "v0" ] ],
+    [ "led_car_r:C", "uno:GND.1", "black", [ "v15", "h-140" ] ],
+
+    [ "uno:5", "r_ped_g:1", "green", [ "v0" ] ],
+    [ "r_ped_g:2", "led_ped_g:A", "green", [ "v0" ] ],
+    [ "led_ped_g:C", "uno:GND.1", "black", [ "v15", "h-140" ] ],
+
+    [ "uno:6", "r_ped_r:1", "red", [ "v0" ] ],
+    [ "r_ped_r:2", "led_ped_r:A", "red", [ "v0" ] ],
+    [ "led_ped_r:C", "uno:GND.1", "black", [ "v15", "h-140" ] ],
+
+    [ "uno:7", "btn_peaton:2.r", "blue", [ "v0" ] ],
+    [ "btn_peaton:1.l", "uno:GND.2", "black", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}

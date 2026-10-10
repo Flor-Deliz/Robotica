@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Circuitos y Semáforos - Arduino</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    .led-glow-red {
+      box-shadow: 0 0 25px 8px rgba(239, 68, 68, 0.85), inset 0 0 10px rgba(255, 255, 255, 0.6);
+    }
+    .led-glow-yellow {
+      box-shadow: 0 0 25px 8px rgba(234, 179, 8, 0.85), inset 0 0 10px rgba(255, 255, 255, 0.6);
+    }
+    .led-glow-green {
+      box-shadow: 0 0 25px 8px rgba(34, 197, 94, 0.85), inset 0 0 10px rgba(255, 255, 255, 0.6);
+    }
+    .led-glow-blue {
+      box-shadow: 0 0 25px 8px rgba(59, 130, 246, 0.85), inset 0 0 10px rgba(255, 255, 255, 0.6);
+    }
+    .housing {
+      background: radial-gradient(circle at 50% 30%, #27272a, #09090b);
+      border: 3px solid #3f3f46;
+      box-shadow: inset 0 2px 6px rgba(255,255,255,0.1), 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body class="bg-[var(--background,#0f172a)] text-[var(--foreground,#f8fafc)] min-h-screen p-4 md:p-6 font-sans">
+  <div class="max-w-5xl mx-auto space-y-6">
+    
+    <!-- Encabezado Principal -->
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl p-5 shadow-lg gap-4">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full text-xs font-semibold mb-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          Laboratorio Interactivo de Simulación
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight">Simulador de Circuitos con Arduino</h1>
+        <p class="text-sm text-[var(--muted-foreground,#94a3b8)] mt-1">Análisis, diseño y verificación en tiempo real de los 4 circuitos solicitados.</p>
+      </div>
+
+      <!-- Selector de Pestañas de Circuitos -->
+      <nav class="flex flex-wrap gap-2 bg-[var(--background,#0f172a)] p-1.5 rounded-xl border border-[var(--border,#334155)]" id="tabs">
+        <button onclick="setTab(1)" id="tab-btn-1" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all bg-emerald-600 text-white shadow">
+          1. LED Blink
+        </button>
+        <button onclick="setTab(2)" id="tab-btn-2" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white">
+          2. Semáforo Americano
+        </button>
+        <button onclick="setTab(3)" id="tab-btn-3" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white">
+          3. Autos y Peatones
+        </button>
+        <button onclick="setTab(4)" id="tab-btn-4" class="tab-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white">
+          4. Con Botón Peatonal
+        </button>
+      </nav>
+    </header>
+
+    <!-- ===================================================================== -->
+    <!-- CIRCUITO 1: PRENDER Y APAGAR UN LED -->
+    <!-- ===================================================================== -->
+    <section id="panel-1" class="circuit-panel grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl p-6 shadow-md flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+              Circuito 1: Prender y Apagar un LED (Blink)
+            </h2>
+            <span class="text-xs px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300" id="c1-mode-badge">
+              Modo Automático
+            </span>
+          </div>
+
+          <!-- Área Visual del Circuito -->
+          <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-6 flex flex-col md:flex-row items-center justify-around gap-6 my-4">
+            <!-- LED Visual con efecto realista -->
+            <div class="flex flex-col items-center gap-3">
+              <div class="text-xs font-mono text-slate-400">LED Rojo (Pin D8)</div>
+              <div id="c1-led" class="w-24 h-24 rounded-full border-4 border-slate-700 bg-red-950 flex items-center justify-center transition-all duration-150">
+                <span class="text-xs font-mono font-bold text-red-300 opacity-60">Vf ≈ 2.0V</span>
+              </div>
+              <span id="c1-led-status" class="text-xs font-mono font-bold text-red-500 uppercase tracking-wider">APAGADO (0V)</span>
+            </div>
+
+            <!-- Gráfico de Instrumentación y Ley de Ohm -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-xs space-y-2.5 w-full md:w-64 font-mono">
+              <div class="text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-800 pb-1">Telemetría Eléctrica</div>
+              <div class="flex justify-between"><span>Voltaje Fuente ($V_{CC}$):</span><span class="text-slate-200">5.00 V</span></div>
+              <div class="flex justify-between"><span>Caída LED ($V_f$):</span><span id="c1-vf" class="text-red-400 font-bold">0.00 V</span></div>
+              <div class="flex justify-between"><span>Voltaje en Resistor:</span><span id="c1-vr" class="text-yellow-400 font-bold">0.00 V</span></div>
+              <div class="flex justify-between"><span>Corriente ($I$):</span><span id="c1-curr" class="text-emerald-400 font-bold">0.00 mA</span></div>
+              <div class="flex justify-between"><span>Resistencia Limitadora:</span><span class="text-slate-200">220 Ω</span></div>
+              <div class="flex justify-between"><span>Potencia Resistencia:</span><span id="c1-pwr" class="text-sky-400">0.00 mW</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controles Interactivos -->
+        <div class="border-t border-slate-800 pt-4 flex flex-wrap gap-4 items-center justify-between">
+          <div class="flex items-center gap-3">
+            <button id="c1-toggle-btn" onclick="c1ToggleAuto()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow transition">
+              Pausar / Manual
+            </button>
+            <button id="c1-manual-on" onclick="c1SetManual(true)" disabled class="px-3 py-2 bg-slate-800 disabled:opacity-40 text-slate-200 hover:bg-slate-700 rounded-lg text-xs font-semibold transition">
+              Encender (HIGH)
+            </button>
+            <button id="c1-manual-off" onclick="c1SetManual(false)" disabled class="px-3 py-2 bg-slate-800 disabled:opacity-40 text-slate-200 hover:bg-slate-700 rounded-lg text-xs font-semibold transition">
+              Apagar (LOW)
+            </button>
+          </div>
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <span class="text-xs text-slate-400">Velocidad:</span>
+            <input type="range" id="c1-speed" min="200" max="2000" step="100" value="1000" class="accent-emerald-500 cursor-pointer" oninput="c1UpdateSpeed(this.value)">
+            <span id="c1-speed-val" class="text-xs font-mono text-emerald-400">1000 ms</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel de Teoría y Explicación -->
+      <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl p-6 shadow-md space-y-4">
+        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Análisis y Diseño del Circuito</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Un diodo emisor de luz (LED) es un componente semiconductor no lineal. Conectar un LED directamente a los 5V de Arduino quemaría el diodo o dañaría el pin GPIO por sobrecorriente.
+        </p>
+        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl font-mono text-xs text-slate-300 space-y-1">
+          <div class="text-emerald-400 font-semibold">Fórmula de Diseño:</div>
+          <div>$$R = \frac{V_{CC} - V_f}{I_{LED}}$$</div>
+          <div>$$R = \frac{5.0\text{V} - 2.0\text{V}}{0.015\text{A}} = 200\,\Omega$$</div>
+          <div class="text-slate-400 text-[11px]">Valor comercial más cercano: <strong>220 Ω</strong></div>
+        </div>
+        <div class="text-xs text-slate-400 space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span>Pin D8 en estado <code class="text-emerald-300">OUTPUT</code></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span>Conexión: Pin 8 &rarr; Resistencia &rarr; Ánodo (+) &rarr; Cátodo (-) &rarr; GND</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- CIRCUITO 2: SEMÁFORO AMERICANO -->
+    <!-- ===================================================================== -->
+    <section id="panel-2" class="circuit-panel hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl p-6 shadow-md flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <span class="w-3 h-3 bg-amber-500 rounded-full"></span>
+              Circuito 2: Semáforo Americano Estándar (MUTCD)
+            </h2>
+            <span id="c2-status-badge" class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
+              VERDE (Flujo Libre)
+            </span>
+          </div>
+
+          <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-6 flex flex-col md:flex-row items-center justify-around gap-6 my-4">
+            <!-- Semáforo Físico Realista -->
+            <div class="housing p-4 rounded-3xl flex flex-col gap-4 items-center">
+              <!-- Visera y Luz Roja -->
+              <div class="relative flex flex-col items-center">
+                <div class="w-20 h-4 bg-zinc-700 rounded-t-full -mb-1 opacity-80"></div>
+                <div id="c2-led-red" class="w-16 h-16 rounded-full border-4 border-zinc-700 bg-red-950 transition-all duration-200"></div>
+              </div>
+              <!-- Visera y Luz Amarilla -->
+              <div class="relative flex flex-col items-center">
+                <div class="w-20 h-4 bg-zinc-700 rounded-t-full -mb-1 opacity-80"></div>
+                <div id="c2-led-yellow" class="w-16 h-16 rounded-full border-4 border-zinc-700 bg-amber-950 transition-all duration-200"></div>
+              </div>
+              <!-- Visera y Luz Verde -->
+              <div class="relative flex flex-col items-center">
+                <div class="w-20 h-4 bg-zinc-700 rounded-t-full -mb-1 opacity-80"></div>
+                <div id="c2-led-green" class="w-16 h-16 rounded-full border-4 border-zinc-700 bg-green-950 transition-all duration-200"></div>
+              </div>
+            </div>
+
+            <!-- Panel de Control y Temporizador Regresivo -->
+            <div class="flex flex-col items-center text-center space-y-4">
+              <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 w-48 shadow-inner">
+                <div class="text-xs font-mono text-slate-400 uppercase">Tiempo Restante</div>
+                <div id="c2-countdown" class="text-4xl font-extrabold font-mono text-emerald-400 my-1">5.0s</div>
+                <div class="text-[11px] text-slate-400" id="c2-fase-desc">Vehículos en avance</div>
+              </div>
+
+              <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-left w-64 space-y-1.5">
+                <div class="text-slate-400 font-semibold border-b border-slate-800 pb-1">Secuencia de Pines:</div>
+                <div class="flex justify-between"><span>Pin 4 (Rojo):</span><span id="c2-pin-r" class="text-slate-500 font-bold">LOW</span></div>
+                <div class="flex justify-between"><span>Pin 3 (Amarillo):</span><span id="c2-pin-y" class="text-slate-500 font-bold">LOW</span></div>
+                <div class="flex justify-between"><span>Pin 2 (Verde):</span><span id="c2-pin-g" class="text-emerald-400 font-bold">HIGH</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-800 pt-4 flex justify-between items-center">
+          <button onclick="c2TogglePause()" id="c2-pause-btn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold shadow transition">
+            Pausar Ciclo
+          </button>
+          <span class="text-xs text-slate-400">Ciclo Automático FSM (Verde &rarr; Amarillo &rarr; All-Red &rarr; Rojo)</span>
+        </div>
+      </div>
+
+      <!-- Información del Estándar Americano -->
+      <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl p-6 shadow-md space-y-4">
+        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Reglas del Semáforo Americano</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          En los semáforos bajo normativa norteamericana (MUTCD), el orden de ciclo es estrictamente:
+        </p>
+        <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+          <li><strong>Verde Sólido:</strong> Paso prioritario permitido (5 seg).</li>
+          <li><strong>Amarillo de Advertencia:</strong> Clearance interval; alerta para detenerse antes de entrar al cruce (2 seg).</li>
+          <li><strong>Intervalo All-Red:</strong> Despeje de seguridad para evitar colisiones transversales (1 seg).</li>
+          <li><strong>Rojo Sólido:</strong> Detención total obligatoria (5 seg).</li>
+        </ul>
+        <div class="bg-amber-500/10 border border-amber-500/20 text-amber-300 p-3 rounded-xl text-xs">
+          <strong>Diferencia clave:</strong> A diferencia de algunos semáforos europeos, en EE.UU. nunca se encienden Rojo y Amarillo al mismo tiempo antes del Verde.
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- CIRCUITO 3: AUTOS Y PERSONAS (SINCRONIZADO) -->
+    <!-- ===================================================================== -->
+    <section id="panel-3" class="circuit-panel hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl p-6 shadow-md flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <span class="w-3 h-3 bg-sky-500 rounded-full"></span>
+              Circuito 3: Semáforo de Autos y Peatones Sincronizado
+            </h2>
+            <span id="c3-fase-badge" class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
+              Fase Vehicular
+            </span>
+          </div>
+
+          <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-6 flex flex-col md:flex-row items-center justify-around gap-8 my-4">
+            <!-- Semáforo de Vehículos -->
+            <div class="flex flex-col items-center gap-2">
+              <div class="text-xs font-mono font-bold text-slate-300">Vehículos (3 Luces)</div>
+              <div class="housing p-3 rounded-3xl flex flex-col gap-3 items-center">
+                <div id="c3-car-r" class="w-14 h-14 rounded-full border-4 border-zinc-700 bg-red-950 transition-all duration-150"></div>
+                <div id="c3-car-y" class="w-14 h-14 rounded-full border-4 border-zinc-700 bg-amber-950 transition-all duration-150"></div>
+                <div id="c3-car-g" class="w-14 h-14 rounded-full border-4 border-zinc-700 bg-green-950 transition-all duration-150"></div>
+              </div>
+              <div class="text-[11px] font-mono text-slate-400" id="c3-car-label">Pines D2, D3, D4</div>
+            </div>
+
+            <!-- Calle / Intersección Visual -->
+            <div class="flex flex-col items-center text-center space-y-2">
+              <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 w-40">
+                <div class="text-xs font-mono text-slate-400">Temporizador</div>
+                <div id="c3-countdown" class="text-3xl font-extrabold font-mono text-emerald-400 my-1">6.0s</div>
+                <div class="text-[11px] text-slate-400" id="c3-action-label">Vehículos en marcha</div>
+              </div>
+              <div class="p-2 border border-dashed border-slate-700 rounded-lg text-xs font-mono text-slate-300 w-44">
+                Paso Peatonal (Zebra)
+              </div>
+            </div>
+
+            <!-- Semáforo Peatonal -->
+            <div class="flex flex-col items-center gap-2">
+              <div class="text-xs font-mono font-bold text-slate-300">Peatonal (2 Luces)</div>
+              <div class="housing p-3 rounded-3xl flex flex-col gap-3 items-center">
+                <!-- Mano Roja (Don't Walk) -->
+                <div id="c3-ped-r" class="w-14 h-14 rounded-full border-4 border-zinc-700 bg-red-950 transition-all duration-150 flex items-center justify-center font-bold text-xs text-red-200">
+                  ALTO
+                </div>
+                <!-- Hombre Verde (Walk) -->
+                <div id="c3-ped-g" class="w-14 h-14 rounded-full border-4 border-zinc-700 bg-green-950 transition-all duration-150 flex items-center justify-center font-bold text-xs text-green-200">
+                  CRUCE
+                </div>
+              </div>
+              <div class="text-[11px] font-mono text-slate-400">Pines D5, D6</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-800 pt-4 flex justify-between items-center text-xs text-slate-400">
+          <span>Secuencia: Verde Carros &rarr; Amarillo &rarr; All-Red &rarr; Verde Peatones &rarr; Parpadeo Peatones &rarr; All-Red</span>
+        </div>
+      </div>
+
+      <!-- Tarjeta de Seguridad Vial -->
+      <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl p-6 shadow-md space-y-4">
+        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Matriz de Estados de Seguridad</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Para garantizar la seguridad de peatones y conductores, el controlador implementa exclusión mutua de estados:
+        </p>
+        <div class="space-y-2 text-xs font-mono">
+          <div class="p-2 bg-slate-900 border border-slate-800 rounded-lg flex justify-between items-center">
+            <span>Vehículos: <b class="text-emerald-400">VERDE</b></span>
+            <span>Peatón: <b class="text-red-400">ROJO</b></span>
+          </div>
+          <div class="p-2 bg-slate-900 border border-slate-800 rounded-lg flex justify-between items-center">
+            <span>Vehículos: <b class="text-yellow-400">AMARILLO</b></span>
+            <span>Peatón: <b class="text-red-400">ROJO</b></span>
+          </div>
+          <div class="p-2 bg-slate-900 border border-slate-800 rounded-lg flex justify-between items-center">
+            <span>Vehículos: <b class="text-red-400">ROJO</b></span>
+            <span>Peatón: <b class="text-red-400">ROJO (Clearance)</b></span>
+          </div>
+          <div class="p-2 bg-slate-900 border border-slate-800 rounded-lg flex justify-between items-center">
+            <span>Vehículos: <b class="text-red-400">ROJO</b></span>
+            <span>Peatón: <b class="text-emerald-400">VERDE (Paso)</b></span>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-400 bg-slate-900/50 p-2.5 rounded-lg border border-slate-800">
+          El verde peatonal parpadea 3 veces en la fase final para advertir que el cruce está por expirar.
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- CIRCUITO 4: CON BOTÓN PEATONAL (INTERACTIVO) -->
+    <!-- ===================================================================== -->
+    <section id="panel-4" class="circuit-panel hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl p-6 shadow-md flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <span class="w-3 h-3 bg-indigo-500 rounded-full"></span>
+              Circuito 4: Semáforo Demandado por Botón Peatonal (FSM)
+            </h2>
+            <span id="c4-fsm-badge" class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
+              ESTADO_AUTOS_VERDE
+            </span>
+          </div>
+
+          <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-6 flex flex-col md:flex-row items-center justify-around gap-6 my-4">
+            <!-- Semáforo Vehicular -->
+            <div class="flex flex-col items-center gap-2">
+              <div class="text-xs font-mono font-bold text-slate-300">Autos (D2, D3, D4)</div>
+              <div class="housing p-3 rounded-3xl flex flex-col gap-3 items-center">
+                <div id="c4-car-r" class="w-14 h-14 rounded-full border-4 border-zinc-700 bg-red-950 transition-all duration-150"></div>
+                <div id="c4-car-y" class="w-14 h-14 rounded-full border-4 border-zinc-700 bg-amber-950 transition-all duration-150"></div>
+                <div id="c4-car-g" class="w-14 h-14 rounded-full border-4 border-zinc-700 bg-green-950 transition-all duration-150"></div>
+              </div>
+            </div>
+
+            <!-- Interactivo: Botón Peatonal Realista -->
+            <div class="flex flex-col items-center gap-3">
+              <div class="text-xs font-mono text-slate-300">Pulsador de Demanda (D7)</div>
+              <button id="c4-ped-btn" onclick="c4PressButton()" class="relative group p-4 bg-gradient-to-b from-amber-400 to-amber-600 active:translate-y-1 hover:brightness-110 rounded-2xl border-4 border-amber-800 shadow-2xl transition flex flex-col items-center justify-center w-36 h-36">
+                <div class="w-16 h-16 rounded-full bg-zinc-800 border-2 border-zinc-600 flex items-center justify-center shadow-inner group-active:scale-95 transition">
+                  <svg class="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                  </svg>
+                </div>
+                <span class="text-[11px] font-bold text-amber-950 mt-2 tracking-wide uppercase">OPRIMIR PARA CRUZAR</span>
+              </button>
+
+              <div id="c4-wait-indicator" class="text-xs font-mono font-bold px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-500">
+                ESPERE SU TURNO
+              </div>
+            </div>
+
+            <!-- Semáforo Peatonal -->
+            <div class="flex flex-col items-center gap-2">
+              <div class="text-xs font-mono font-bold text-slate-300">Peatón (D5, D6)</div>
+              <div class="housing p-3 rounded-3xl flex flex-col gap-3 items-center">
+                <div id="c4-ped-r" class="w-14 h-14 rounded-full border-4 border-zinc-700 bg-red-950 transition-all duration-150 flex items-center justify-center font-bold text-xs text-red-200">
+                  ALTO
+                </div>
+                <div id="c4-ped-g" class="w-14 h-14 rounded-full border-4 border-zinc-700 bg-green-950 transition-all duration-150 flex items-center justify-center font-bold text-xs text-green-200">
+                  CRUCE
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Consola Serie Virtual de Arduino -->
+        <div class="border-t border-slate-800 pt-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-mono text-slate-400">Monitor Serie Arduino (9600 baud)</span>
+            <span class="text-[11px] text-slate-500 font-mono">millis() FSM Engine</span>
+          </div>
+          <div id="c4-serial-log" class="bg-black/80 border border-slate-800 rounded-xl p-3 h-24 overflow-y-auto font-mono text-[11px] text-emerald-400 space-y-1">
+            <div>[SETUP] Arduino Uno inicializado. Pines listos.</div>
+            <div>[FSM] Estado inicial: ESTADO_AUTOS_VERDE activo.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Explicación de FSM No Bloqueante -->
+      <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl p-6 shadow-md space-y-4">
+        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Lógica FSM y millis()</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          En microcontroladores profesionales nunca se debe usar <code>delay()</code> con botones, porque detiene la CPU y pierde las pulsaciones del usuario.
+        </p>
+        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs space-y-2">
+          <div class="text-indigo-400 font-semibold">Ventajas de esta arquitectura:</div>
+          <div class="flex items-start gap-2 text-slate-300">
+            <span class="text-emerald-400 font-bold">&check;</span>
+            <span><strong>Respuesta Inmediata:</strong> El botón se lee en cada ciclo mediante <code>INPUT_PULLUP</code> y debounce.</span>
+          </div>
+          <div class="flex items-start gap-2 text-slate-300">
+            <span class="text-emerald-400 font-bold">&check;</span>
+            <span><strong>Seguridad Vial:</strong> Se asegura un mínimo de 6s en Verde para autos antes de conceder la fase peatonal.</span>
+          </div>
+          <div class="flex items-start gap-2 text-slate-300">
+            <span class="text-emerald-400 font-bold">&check;</span>
+            <span><strong>Anti-spam:</strong> Pulsaciones múltiples repetidas se ignoran mientras la petición ya está en cola.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- LÓGICA DE CONTROL DE LA SIMULACIÓN EN TIEMPO REAL -->
+  <script>
+    function setTab(num) {
+      document.querySelectorAll('.circuit-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById('panel-' + num).classList.remove('hidden');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-emerald-600', 'text-white', 'shadow');
+        btn.classList.add('text-slate-400');
+      });
+      const activeBtn = document.getElementById('tab-btn-' + num);
+      activeBtn.classList.remove('text-slate-400');
+      activeBtn.classList.add('bg-emerald-600', 'text-white', 'shadow');
+    }
+
+    // ==========================================
+    // CIRCUITO 1: BLINK LED
+    // ==========================================
+    let c1Auto = true;
+    let c1Speed = 1000;
+    let c1State = false;
+    let c1Interval = null;
+
+    function c1UpdateDisplay() {
+      const led = document.getElementById('c1-led');
+      const status = document.getElementById('c1-led-status');
+      const vf = document.getElementById('c1-vf');
+      const vr = document.getElementById('c1-vr');
+      const curr = document.getElementById('c1-curr');
+      const pwr = document.getElementById('c1-pwr');
+
+      if (c1State) {
+        led.classList.add('bg-red-500', 'led-glow-red');
+        led.classList.remove('bg-red-950');
+        status.textContent = 'ENCENDIDO (5.0V)';
+        status.className = 'text-xs font-mono font-bold text-red-400 uppercase tracking-wider';
+        vf.textContent = '2.00 V';
+        vr.textContent = '3.00 V';
+        curr.textContent = '13.64 mA';
+        pwr.textContent = '40.91 mW';
+      } else {
+        led.classList.remove('bg-red-500', 'led-glow-red');
+        led.classList.add('bg-red-950');
+        status.textContent = 'APAGADO (0V)';
+        status.className = 'text-xs font-mono font-bold text-slate-500 uppercase tracking-wider';
+        vf.textContent = '0.00 V';
+        vr.textContent = '0.00 V';
+        curr.textContent = '0.00 mA';
+        pwr.textContent = '0.00 mW';
+      }
+    }
+
+    function c1StartBlink() {
+      if (c1Interval) clearInterval(c1Interval);
+      c1Interval = setInterval(() => {
+        if (!c1Auto) return;
+        c1State = !c1State;
+        c1UpdateDisplay();
+      }, c1Speed);
+    }
+
+    function c1ToggleAuto() {
+      c1Auto = !c1Auto;
+      const badge = document.getElementById('c1-mode-badge');
+      const btn = document.getElementById('c1-toggle-btn');
+      const onBtn = document.getElementById('c1-manual-on');
+      const offBtn = document.getElementById('c1-manual-off');
+
+      if (c1Auto) {
+        badge.textContent = 'Modo Automático';
+        btn.textContent = 'Pausar / Manual';
+        onBtn.disabled = true;
+        offBtn.disabled = true;
+        c1StartBlink();
+      } else {
+        badge.textContent = 'Modo Manual';
+        btn.textContent = 'Reanudar Automático';
+        onBtn.disabled = false;
+        offBtn.disabled = false;
+        if (c1Interval) clearInterval(c1Interval);
+      }
+    }
+
+    function c1SetManual(state) {
+      if (c1Auto) return;
+      c1State = state;
+      c1UpdateDisplay();
+    }
+
+    function c1UpdateSpeed(val) {
+      c1Speed = parseInt(val);
+      document.getElementById('c1-speed-val').textContent = val + ' ms';
+      if (c1Auto) c1StartBlink();
+    }
+
+    c1StartBlink();
+
+    // ==========================================
+    // CIRCUITO 2: SEMÁFORO AMERICANO
+    // ==========================================
+    let c2Paused = false;
+    let c2Phase = 0; // 0: Verde, 1: Amarillo, 2: All-Red, 3: Rojo
+    const c2Phases = [
+      { name: 'VERDE (Avance)', duration: 5, r: false, y: false, g: true, badge: 'VERDE (Flujo Libre)', badgeClass: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', desc: 'Vehículos en avance continuo' },
+      { name: 'AMARILLO (Advertencia)', duration: 2, r: false, y: true, g: false, badge: 'AMARILLO (Precaución)', badgeClass: 'bg-amber-500/10 border-amber-500/20 text-amber-400', desc: 'Despeje vehicular obligatorio' },
+      { name: 'ALL-RED (Seguridad)', duration: 1, r: true, y: false, g: false, badge: 'ALL-RED (Despeje)', badgeClass: 'bg-red-500/10 border-red-500/20 text-red-400', desc: 'Despeje de intersección' },
+      { name: 'ROJO (Detención)', duration: 5, r: true, y: false, g: false, badge: 'ROJO (Alto Total)', badgeClass: 'bg-red-500/10 border-red-500/20 text-red-400', desc: 'Detención completa de vehículos' }
+    ];
+    let c2TimeLeft = c2Phases[0].duration;
+
+    function c2Render() {
+      const p = c2Phases[c2Phase];
+      const lr = document.getElementById('c2-led-red');
+      const ly = document.getElementById('c2-led-yellow');
+      const lg = document.getElementById('c2-led-green');
+
+      lr.className = 'w-16 h-16 rounded-full border-4 border-zinc-700 transition-all duration-200 ' + (p.r ? 'bg-red-500 led-glow-red' : 'bg-red-950');
+      ly.className = 'w-16 h-16 rounded-full border-4 border-zinc-700 transition-all duration-200 ' + (p.y ? 'bg-amber-400 led-glow-yellow' : 'bg-amber-950');
+      lg.className = 'w-16 h-16 rounded-full border-4 border-zinc-700 transition-all duration-200 ' + (p.g ? 'bg-emerald-500 led-glow-green' : 'bg-green-950');
+
+      document.getElementById('c2-pin-r').textContent = p.r ? 'HIGH' : 'LOW';
+      document.getElementById('c2-pin-r').className = p.r ? 'text-red-400 font-bold' : 'text-slate-500 font-bold';
+      document.getElementById('c2-pin-y').textContent = p.y ? 'HIGH' : 'LOW';
+      document.getElementById('c2-pin-y').className = p.y ? 'text-amber-400 font-bold' : 'text-slate-500 font-bold';
+      document.getElementById('c2-pin-g').textContent = p.g ? 'HIGH' : 'LOW';
+      document.getElementById('c2-pin-g').className = p.g ? 'text-emerald-400 font-bold' : 'text-slate-500 font-bold';
+
+      const badge = document.getElementById('c2-status-badge');
+      badge.textContent = p.badge;
+      badge.className = 'text-xs px-2.5 py-1 rounded-full border font-medium ' + p.badgeClass;
+
+      document.getElementById('c2-fase-desc').textContent = p.desc;
+      document.getElementById('c2-countdown').textContent = c2TimeLeft.toFixed(1) + 's';
+    }
+
+    function c2TogglePause() {
+      c2Paused = !c2Paused;
+      document.getElementById('c2-pause-btn').textContent = c2Paused ? 'Reanudar Ciclo' : 'Pausar Ciclo';
+    }
+
+    setInterval(() => {
+      if (c2Paused) return;
+      c2TimeLeft -= 0.1;
+      if (c2TimeLeft <= 0) {
+        c2Phase = (c2Phase + 1) % c2Phases.length;
+        c2TimeLeft = c2Phases[c2Phase].duration;
+      }
+      c2Render();
+    }, 100);
+
+    // ==========================================
+    // CIRCUITO 3: AUTOS Y PEATONES
+    // ==========================================
+    let c3Phase = 0;
+    const c3Phases = [
+      { dur: 6.0, car: [0, 0, 1], ped: [0, 1], name: 'Tráfico Vehicular', desc: 'Vehículos en marcha | Peatones detenidos' },
+      { dur: 2.5, car: [0, 1, 0], ped: [0, 1], name: 'Precaución Vehicular', desc: 'Vehículos frenando | Peatones detenidos' },
+      { dur: 1.5, car: [1, 0, 0], ped: [0, 1], name: 'Despeje Todo Rojo', desc: 'Todos en alto por seguridad' },
+      { dur: 5.0, car: [1, 0, 0], ped: [1, 0], name: 'Cruce Peatonal', desc: 'Peatones cruzando libremente' },
+      { dur: 2.5, car: [1, 0, 0], ped: [-1, 0], name: 'Aviso Fin de Cruce', desc: 'Peatón parpadeando | Concluir cruce' },
+      { dur: 1.0, car: [1, 0, 0], ped: [0, 1], name: 'Despeje Final', desc: 'Ambos en rojo | Preparando salida autos' }
+    ];
+    let c3TimeLeft = c3Phases[0].dur;
+    let c3BlinkTick = false;
+
+    function c3Render() {
+      const p = c3Phases[c3Phase];
+
+      // Luces autos
+      const cr = document.getElementById('c3-car-r');
+      const cy = document.getElementById('c3-car-y');
+      const cg = document.getElementById('c3-car-g');
+      cr.className = 'w-14 h-14 rounded-full border-4 border-zinc-700 transition-all ' + (p.car[0] ? 'bg-red-500 led-glow-red' : 'bg-red-950');
+      cy.className = 'w-14 h-14 rounded-full border-4 border-zinc-700 transition-all ' + (p.car[1] ? 'bg-amber-400 led-glow-yellow' : 'bg-amber-950');
+      cg.className = 'w-14 h-14 rounded-full border-4 border-zinc-700 transition-all ' + (p.car[2] ? 'bg-emerald-500 led-glow-green' : 'bg-green-950');
+
+      // Luces peatones
+      const pr = document.getElementById('c3-ped-r');
+      const pg = document.getElementById('c3-ped-g');
+      pr.className = 'w-14 h-14 rounded-full border-4 border-zinc-700 transition-all flex items-center justify-center font-bold text-xs ' + 
+        (p.ped[1] ? 'bg-red-500 text-white led-glow-red' : 'bg-red-950 text-red-900');
+
+      let pedGActive = p.ped[0] === 1 || (p.ped[0] === -1 && c3BlinkTick);
+      pg.className = 'w-14 h-14 rounded-full border-4 border-zinc-700 transition-all flex items-center justify-center font-bold text-xs ' + 
+        (pedGActive ? 'bg-emerald-500 text-white led-glow-green' : 'bg-green-950 text-emerald-950');
+
+      document.getElementById('c3-countdown').textContent = c3TimeLeft.toFixed(1) + 's';
+      document.getElementById('c3-action-label').textContent = p.desc;
+      document.getElementById('c3-fase-badge').textContent = p.name;
+    }
+
+    setInterval(() => {
+      c3TimeLeft -= 0.1;
+      if (c3Phases[c3Phase].ped[0] === -1) {
+        c3BlinkTick = Math.floor(c3TimeLeft * 4) % 2 === 0;
+      }
+      if (c3TimeLeft <= 0) {
+        c3Phase = (c3Phase + 1) % c3Phases.length;
+        c3TimeLeft = c3Phases[c3Phase].dur;
+      }
+      c3Render();
+    }, 100);
+
+    // ==========================================
+    // CIRCUITO 4: CON BOTÓN PEATONAL
+    // ==========================================
+    let c4State = 'AUTOS_VERDE';
+    let c4Timer = 0;
+    let c4TimeInState = 0;
+    let c4Request = false;
+    let c4MinGreen = 6.0;
+    let c4GreenTimer = 0;
+    let c4BlinkState = false;
+
+    function c4Log(msg) {
+      const box = document.getElementById('c4-serial-log');
+      const div = document.createElement('div');
+      div.textContent = `[${(millisNow()/1000).toFixed(1)}s] ${msg}`;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    let startTime = Date.now();
+    function millisNow() { return Date.now() - startTime; }
+
+    function c4PressButton() {
+      if (!c4Request) {
+        c4Request = true;
+        c4Log("BOTÓN OPRIMIDO: Petición de cruce registrada en memoria.");
+        document.getElementById('c4-wait-indicator').textContent = 'SOLICITUD EN PROCESO';
+        document.getElementById('c4-wait-indicator').className = 'text-xs font-mono font-bold px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500 text-amber-300 animate-pulse';
+      } else {
+        c4Log("BOTÓN: Solicitud ya en curso, espere el cambio de fase.");
+      }
+    }
+
+    function c4Render() {
+      const cr = document.getElementById('c4-car-r');
+      const cy = document.getElementById('c4-car-y');
+      const cg = document.getElementById('c4-car-g');
+      const pr = document.getElementById('c4-ped-r');
+      const pg = document.getElementById('c4-ped-g');
+      const badge = document.getElementById('c4-fsm-badge');
+
+      badge.textContent = 'ESTADO_' + c4State;
+
+      let carR = false, carY = false, carG = false;
+      let pedR = true, pedG = false;
+
+      if (c4State === 'AUTOS_VERDE') {
+        carG = true; pedR = true;
+      } else if (c4State === 'AUTOS_AMARILLO') {
+        carY = true; pedR = true;
+      } else if (c4State === 'ALL_RED_PRE' || c4State === 'ALL_RED_POST') {
+        carR = true; pedR = true;
+      } else if (c4State === 'PEATON_CRUCE') {
+        carR = true; pedR = false; pedG = true;
+      } else if (c4State === 'PEATON_AVISO') {
+        carR = true; pedR = false; pedG = c4BlinkState;
+      }
+
+      cr.className = 'w-14 h-14 rounded-full border-4 border-zinc-700 transition-all ' + (carR ? 'bg-red-500 led-glow-red' : 'bg-red-950');
+      cy.className = 'w-14 h-14 rounded-full border-4 border-zinc-700 transition-all ' + (carY ? 'bg-amber-400 led-glow-yellow' : 'bg-amber-950');
+      cg.className = 'w-14 h-14 rounded-full border-4 border-zinc-700 transition-all ' + (carG ? 'bg-emerald-500 led-glow-green' : 'bg-green-950');
+
+      pr.className = 'w-14 h-14 rounded-full border-4 border-zinc-700 transition-all flex items-center justify-center font-bold text-xs ' + 
+        (pedR ? 'bg-red-500 text-white led-glow-red' : 'bg-red-950 text-red-900');
+      pg.className = 'w-14 h-14 rounded-full border-4 border-zinc-700 transition-all flex items-center justify-center font-bold text-xs ' + 
+        (pedG ? 'bg-emerald-500 text-white led-glow-green' : 'bg-green-950 text-emerald-950');
+    }
+
+    setInterval(() => {
+      c4TimeInState += 0.1;
+      if (c4State === 'AUTOS_VERDE') {
+        c4GreenTimer += 0.1;
+        if (c4Request && c4GreenTimer >= c4MinGreen) {
+          c4State = 'AUTOS_AMARILLO';
+          c4TimeInState = 0;
+          c4Log("FSM -> ESTADO_AUTOS_AMARILLO: Iniciando frenado vehicular.");
+        }
+      } else if (c4State === 'AUTOS_AMARILLO') {
+        if (c4TimeInState >= 3.0) {
+          c4State = 'ALL_RED_PRE';
+          c4TimeInState = 0;
+          c4Log("FSM -> ESTADO_ALL_RED_PRE: Despeje total de vía.");
+        }
+      } else if (c4State === 'ALL_RED_PRE') {
+        if (c4TimeInState >= 1.5) {
+          c4State = 'PEATON_CRUCE';
+          c4TimeInState = 0;
+          c4Log("FSM -> ESTADO_PEATON_CRUCE: Verde peatonal activo.");
+        }
+      } else if (c4State === 'PEATON_CRUCE') {
+        if (c4TimeInState >= 5.0) {
+          c4State = 'PEATON_AVISO';
+          c4TimeInState = 0;
+          c4Log("FSM -> ESTADO_PEATON_AVISO: Peatón en parpadeo.");
+        }
+      } else if (c4State === 'PEATON_AVISO') {
+        c4BlinkState = Math.floor(c4TimeInState * 4) % 2 === 0;
+        if (c4TimeInState >= 2.5) {
+          c4State = 'ALL_RED_POST';
+          c4TimeInState = 0;
+          c4Log("FSM -> ESTADO_ALL_RED_POST: Cierre de cruce.");
+        }
+      } else if (c4State === 'ALL_RED_POST') {
+        if (c4TimeInState >= 1.5) {
+          c4State = 'AUTOS_VERDE';
+          c4TimeInState = 0;
+          c4GreenTimer = 0;
+          c4Request = false;
+          c4Log("FSM -> ESTADO_AUTOS_VERDE: Reactivado flujo de autos.");
+          document.getElementById('c4-wait-indicator').textContent = 'ESPERE SU TURNO';
+          document.getElementById('c4-wait-indicator').className = 'text-xs font-mono font-bold px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-500';
+        }
+      }
+      c4Render();
+    }, 100);
+
+    // Inicializar visualización inicial
+    c1UpdateDisplay();
+    c2Render();
+    c3Render();
+    c4Render();
+  </script>
+</body>
+</html>
